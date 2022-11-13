@@ -13,7 +13,7 @@ get http://localhost:3000/todos/?category=HOME
 get http://localhost:3000/todos/?category=LEARNING&priority=HIGH
 
 ###
-get http://localhost:3000/todos/6/
+get http://localhost:3000/todos/5/
 
 ####
 get http://localhost:3000/agenda/?date=2021-04-04
