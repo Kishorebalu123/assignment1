@@ -35,19 +35,14 @@ const convertDbObjectToResponseObject=(dbObject)=>{
     }
 }
 
-
 const hasPriorityAndStatusProperties = (requestQuery) => {
     return (
         requestQuery.priority !== undefined && requestQuery.status !== undefined
     );
 };
-
-const hasPriorityProperty = (requestQuery) => {
-    return ( requestQuery.priority !== undefined)
-     
-
-};
-
+const hasPriorityProperty=(requestQuery)=>{
+return requestQuery.priority !== undefined
+}
 const hasStatusProperty = (requestQuery) => {
     return requestQuery.status !== undefined;
 };
@@ -67,94 +62,130 @@ const hasCategoryAndPriority = (requestQuery) => {
 const hasSearchTodo = (requestQuery) => {
     return requestQuery.search_q !== undefined;
 };
+
+
 let invalidColumn=""
+let invalidColumn1=""
+let invalidColumn2=""
+let invalidColumn3=""
+let invalidColumn4=""
 
   const possibleStatusValues = ["TO DO", "IN PROGRESS","DONE"];
   const possiblePriorityValues=["HIGH","MEDIUM","LOW"]
   const possibleCategoryValues=["WORK","HOME","LEARNING"]
 
  const checkInvalid=(requestQuery)=>{
-  
-  switch (true) {
-      case requestQuery.status!==undefined:
-          
+     let invalidTodo=true
        if (possibleStatusValues.includes(requestQuery.status)) {
-           invalidColumn=""
-        
-        } else{
-      invalidColumn="Status"
-      
-         }           
-        break;
-    case requestQuery.priority!==undefined:
-      
-    if ( possiblePriorityValues.includes(requestQuery.priority)){
-            invalidColumn=""
-       }else{
-           invalidColumn="Priority"
-        
-       }
-          break
-         case requestQuery.category!==undefined:
+           invalidColumn1=true
 
+        } else{
+      invalidColumn1="Status"
+             }
+
+    if ( possiblePriorityValues.includes(requestQuery.priority)){
+            invalidColumn2=true
+       }else{
+           invalidColumn2="Priority"
+
+       }
+    
            if (possibleCategoryValues.includes(requestQuery.category)){
-    invalidColumn=""
+    invalidColumn3=true
         }else{
-              invalidColumn="Category"
+              invalidColumn3="Category"
         }
-             break; 
+        if( isValid(new Date(requestQuery.dueDate))){
+        invalidColumn4=true
+        }else{
+       invalidColumn4="Due Date"
+        }
+    
+  switch (true) {
+      case invalidColumn1!==true:
+invalidColumn="Todo Status"
+          break;
+          case invalidColumn2!==true:
+invalidColumn="Todo Priority"
+          break;
+          case invalidColumn3!==true:
+invalidColumn="Todo Category"
+          break;
+  
+      case invalidColumn4!==true:
+          invalidColumn="Due Date"
+          break;
+          default:
+              invalidTodo=false
+              break
   }
-   
-       
- return invalidColumn!==""
+
+
+ return invalidTodo
     }
+
+  updateColumn=""
+const checkInvalidForPut=(requestBody)=>{
+    let invalidTodo=""
+ switch (true) {
+        case requestBody.status !== undefined:
+            if(possibleStatusValues.includes(requestBody.status)){
+            updateColumn = "Status";
+            invalidTodo=false
+            }else{
+                invalidColumn="Todo Status"
+                invalidTodo=true
+            }
+            break;
+        case requestBody.priority !== undefined:
+             if(possiblePriorityValues.includes(requestBody.priority)){
+            updateColumn = "Priority";
+            invalidTodo=false
+            }else{
+                invalidColumn="Todo Priority"
+                invalidTodo=true
+            }
+            break;
+     
+        case requestBody.category !== undefined:
+             if(possibleCategoryValues.includes(requestBody.category)){
+            updateColumn = "Category";
+            invalidTodo=false
+            }else{
+                invalidColumn="Todo Category"
+                invalidTodo=true
+            }
+            break;
+            case requestBody.dueDate!==undefined:
+                const validDate = isValid(new Date(requestBody.dueDate));
+               if(validDate){
+                   updateColumn="Due Date"
+                   invalidTodo=false
+               }else{
+                 invalidColumn="Due Date"
+                 invalidTodo=true
+               }
+       break
+       default:
+            updateColumn="Todo"
+            invalidTodo=false
+    }
+    return invalidTodo
+}  
 
 app.get("/todos/", async (request, response) => {
     let data = null;
     let getTodosQuery = "";
     const { search_q = "", priority, status, category } = request.query;
 
-
-    
-if(checkInvalid(request.query)){
+if(checkInvalidForPut(request.query)){
 response.status(400)
-response.send(`Invalid Todo ${invalidColumn}`)
+response.send(`Invalid ${invalidColumn}`)
 
 }else{  
-    switch (true) {
-      
-        case hasPriorityProperty(request.query):
-            getTodosQuery = `
-      SELECT
-        *
-      FROM
-        todo 
-      WHERE
-        todo LIKE '%${search_q}%'
-        AND priority = '${priority}';`;
-            break;
-        case hasStatusProperty(request.query):
-            getTodosQuery = `
-      SELECT
-        *
-      FROM
-        todo 
-      WHERE
-        todo LIKE '%${search_q}%'
-        AND status = '${status}';`;
-            break;
-        case hasCategoryProperty(request.query):
-            getTodosQuery = `
-      SELECT
-        *
-      FROM
-        todo 
-      WHERE
-        todo LIKE '%${search_q}%'
-        AND category = '${category}';`;
-            break;
-        case hasPriorityAndStatusProperties(request.query):
-            getTodosQuery = `
+   switch (true) {
+    case hasPriorityAndStatusProperties(request.query):
+      getTodosQuery = `
       SELECT
         *
       FROM
@@ -163,8 +194,8 @@ response.send(`Invalid Todo ${invalidColumn}`)
         todo LIKE '%${search_q}%'
         AND status = '${status}'
         AND priority = '${priority}';`;
-            break;            
-        case hasCategoryAndStatus(request.query):
+      break;
+    case hasCategoryAndStatus(request.query):
             getTodosQuery = `
        SELECT
         * 
@@ -186,6 +217,39 @@ response.send(`Invalid Todo ${invalidColumn}`)
         AND priority = '${priority}'
         AND category = '${category}';`;
             break;
+      case hasPriorityProperty(request.query):
+      getTodosQuery = `
+      SELECT
+        *
+      FROM
+        todo 
+      WHERE
+        todo LIKE '%${search_q}%'
+        AND priority = '${priority}';`;
+      break;
+    case hasStatusProperty(request.query):
+      getTodosQuery = `
+      SELECT
+        *
+      FROM
+        todo 
+      WHERE
+        todo LIKE '%${search_q}%'
+        AND status = '${status}';`;
+      break;
+   
+        case hasCategoryProperty(request.query):
+            getTodosQuery = `
+      SELECT
+        *
+      FROM
+        todo 
+      WHERE
+        todo LIKE '%${search_q}%'
+        AND category = '${category}';`;
+            break;
+       
+      
         case hasSearchTodo(request.query):
             getTodosQuery = `
       SELECT
@@ -193,7 +257,7 @@ response.send(`Invalid Todo ${invalidColumn}`)
       FROM
         todo 
       WHERE
-        todo LIKE '%${search_q}%';`;
+        todo LIKE '%${search_q}%';`
             break;
     }
 
@@ -201,6 +265,8 @@ response.send(`Invalid Todo ${invalidColumn}`)
     response.send(data.map((each)=>convertDbObjectToResponseObject(each)));
 }
 });
+
+
 app.get("/todos/:todoId/", async (request, response) => {
     const { todoId } = request.params;
     const getTodoQuery = `
@@ -208,6 +274,7 @@ app.get("/todos/:todoId/", async (request, response) => {
     WHERE id='${todoId}'`;
     const todo = await database.get(getTodoQuery);
     response.send(convertDbObjectToResponseObject(todo));
+    
 });
 app.get("/agenda/", async (request, response) => {
     const { date } = request.query;
@@ -225,66 +292,48 @@ app.get("/agenda/", async (request, response) => {
 });
 app.post("/todos/", async (request, response) => {
     const { id, todo, priority, status, category, dueDate } = request.body;
-  try{
     if(checkInvalid(request.body)){
 response.status(400)
-response.send(`Invalid Todo ${invalidColumn}`)
+response.send(`Invalid ${invalidColumn}`)
   }else{
-   
+ const formatDate = format(new Date(dueDate), "yyyy-MM-dd");
     const todoPostQuery = `
 INSERT INTO 
 todo (id,todo,priority,status,category,due_date)
 VALUES
- (${id},'${todo}','${priority}','${status}','${category}','${dueDate}')`;
+ (${id},'${todo}','${priority}','${status}','${category}','${formatDate}')`;
     await database.run(todoPostQuery);
     response.send("Todo Successfully Added");
   }    
-}catch(error){
-console.log(`DB Error:${error.message}`)
-  }
+
 });
+
+
 app.put("/todos/:todoId/", async (request, response) => {
     const { todoId } = request.params;
+  //  let updateColumn = "";
      const requestBody = request.body;
-if(checkInvalid(requestBody)){
+ if(checkInvalidForPut(requestBody)){
  response.status(400)
-response.send(`Invalid Todo ${invalidColumn}`)
+response.send(`Invalid ${invalidColumn}`)
 
 }else{
-     let updateColumn = "";
-    switch (true) {
-        case requestBody.status !== undefined:
-            updateColumn = "Status";
-            break;
-        case requestBody.priority !== undefined:
-            updateColumn = "Priority";
-            break;
-        case requestBody.todo !== undefined:
-            updateColumn = "Todo";
-            break;
-        case requestBody.category !== undefined:
-            updateColumn = "Category";
-            break;
-         case requestBody.due_date!==undefined:
-            updateColumn="Due Date";
-            break;
-    }
+    
     const previousTodoQuery = `
     SELECT
       *
     FROM
       todo
     WHERE 
-      id = ${todoId};`;
+      id = '${todoId}';`;
     const previousTodo = await database.get(previousTodoQuery);
-
     const {
         todo = previousTodo.todo,
         priority = previousTodo.priority,
         status = previousTodo.status,
         category = previousTodo.category,
-
-    } = request.body;
+        dueDate=previousTodo.due_date 
+         } = request.body;
 
     const updateTodoQuery = `
     UPDATE
@@ -293,7 +342,8 @@ response.send(`Invalid Todo ${invalidColumn}`)
       todo='${todo}',
       priority='${priority}',
       status='${status}',
-      category='${category}'
+      category='${category}',
+      due_date='${dueDate}'
 
     WHERE
       id = ${todoId};`;
@@ -310,9 +360,7 @@ app.delete("/todos/:todoId/", async (request, response) => {
     todo
   WHERE
     id = ${todoId};`;
-
     await database.run(deleteTodoQuery);
     response.send("Todo Deleted");
 });
-
 module.exports = app;
